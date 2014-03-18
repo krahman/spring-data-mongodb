@@ -36,7 +36,7 @@ public interface LazyLoadingProxy {
 	Object initialize();
 
 	/**
-	 * Returns the {@link DBRef} represented by this {@link LazyLoadingProxy}, may be null.
+	 * Returns the {@link DBRef} represented by this {@link LazyLoadingProxy}, may be {@literal null}.
 	 * 
 	 * @return
 	 * @since 1.5
