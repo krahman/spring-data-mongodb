@@ -37,6 +37,7 @@ import org.bson.types.ObjectId;
 import org.hamcrest.CoreMatchers;
 import org.joda.time.DateTime;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -2550,6 +2551,33 @@ public class MongoTemplateTests {
 		assertThat(savedMessage.normalContent.text, is(content.text));
 	}
 
+	/**
+	 * @see DATAMONGO-880
+	 */
+	@Test
+	public void resolvingLazyLoadingProxyWhenBackingContentIsDeletedInBetweenShouldReturnNull() {
+
+		template.dropCollection(SomeTemplate.class);
+		template.dropCollection(SomeContent.class);
+
+		SomeContent content = new SomeContent();
+		content.id = "C1";
+		content.text = "BUBU";
+		template.save(content);
+
+		SomeTemplate tmpl = new SomeTemplate();
+		tmpl.id = "T1";
+		tmpl.content = content; // @DBRef(lazy=true) tmpl.content
+		template.save(tmpl);
+
+		SomeTemplate savedTmpl = template.findById(tmpl.id, SomeTemplate.class);
+		template.remove(content); // remove the content that is referenced by the LazyLoadingProxy.
+
+		SomeContent savedContent = savedTmpl.getContent();
+
+		Assert.assertThat(savedContent.getText(), is(nullValue()));
+	}
+
 	static class DocumentWithDBRefCollection {
 
 		@Id public String id;
@@ -2744,6 +2772,14 @@ public class MongoTemplateTests {
 
 		String id;
 		String text;
+
+		public String getId() {
+			return id;
+		}
+
+		public String getText() {
+			return text;
+		}
 	}
 
 	static class SomeMessage {
